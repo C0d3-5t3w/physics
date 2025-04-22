@@ -1,5 +1,3 @@
-// Physics Engine
-// Define vector class for physics calculations
 class Vector2D {
     constructor(public x: number = 0, public y: number = 0) {}
 
@@ -30,7 +28,7 @@ class Vector2D {
     }
 }
 
-// Base physics object interface
+
 interface PhysicsObject {
     position: Vector2D;
     velocity: Vector2D;
@@ -44,7 +42,7 @@ interface PhysicsObject {
     contains(point: Vector2D): boolean;
 }
 
-// Circle physics object
+
 class Circle implements PhysicsObject {
     constructor(
         public position: Vector2D,
@@ -58,11 +56,11 @@ class Circle implements PhysicsObject {
     ) {}
 
     update(dt: number): void {
-        // Update velocity and position based on acceleration and time
+        
         this.velocity = this.velocity.add(this.acceleration.multiply(dt));
         this.position = this.position.add(this.velocity.multiply(dt));
         
-        // Reset acceleration for next frame
+        
         this.acceleration = new Vector2D();
     }
 
@@ -78,7 +76,7 @@ class Circle implements PhysicsObject {
     }
 
     applyForce(force: Vector2D): void {
-        // F = ma, so a = F/m
+        
         const acceleration = force.multiply(1 / this.mass);
         this.acceleration = this.acceleration.add(acceleration);
     }
@@ -89,7 +87,7 @@ class Circle implements PhysicsObject {
     }
 }
 
-// Box physics object
+
 class Box implements PhysicsObject {
     public width: number;
     public height: number;
@@ -112,14 +110,14 @@ class Box implements PhysicsObject {
     }
 
     update(dt: number): void {
-        // Update velocity and position based on acceleration and time
+        
         this.velocity = this.velocity.add(this.acceleration.multiply(dt));
         this.position = this.position.add(this.velocity.multiply(dt));
         
-        // Update rotation
+        
         this.rotation += this.angularVelocity * dt;
         
-        // Reset acceleration for next frame
+        
         this.acceleration = new Vector2D();
     }
 
@@ -141,14 +139,14 @@ class Box implements PhysicsObject {
     }
 
     applyForce(force: Vector2D): void {
-        // F = ma, so a = F/m
+        
         const acceleration = force.multiply(1 / this.mass);
         this.acceleration = this.acceleration.add(acceleration);
     }
 
-    // Simple AABB collision check (doesn't account for rotation)
+    
     contains(point: Vector2D): boolean {
-        // Transform point to local coordinates
+        
         const localPoint = new Vector2D(
             (point.x - this.position.x) * Math.cos(-this.rotation) - (point.y - this.position.y) * Math.sin(-this.rotation),
             (point.x - this.position.x) * Math.sin(-this.rotation) + (point.y - this.position.y) * Math.cos(-this.rotation)
@@ -163,7 +161,7 @@ class Box implements PhysicsObject {
     }
 }
 
-// Physics world that manages all objects and interactions
+
 class PhysicsWorld {
     private objects: PhysicsObject[] = [];
     private canvas: HTMLCanvasElement;
@@ -180,21 +178,21 @@ class PhysicsWorld {
         if (!ctx) throw new Error('Could not get canvas context');
         this.ctx = ctx;
         
-        // Set canvas dimensions
+        
         this.resetCanvasSize();
         
-        // Start animation loop
+        
         requestAnimationFrame(this.update.bind(this));
         
-        // Handle window resize
+        
         window.addEventListener('resize', this.resetCanvasSize.bind(this));
         
-        // Add click handler for object addition
+        
         this.canvas.addEventListener('click', this.handleCanvasClick.bind(this));
     }
     
     resetCanvasSize(): void {
-        // Make canvas fill its container
+        
         const container = this.canvas.parentElement;
         if (container) {
             this.canvas.width = container.clientWidth;
@@ -203,101 +201,101 @@ class PhysicsWorld {
     }
     
     handleCanvasClick(event: MouseEvent): void {
-        // Add object on click (for testing)
+        
         const rect = this.canvas.getBoundingClientRect();
         const clickPos = new Vector2D(
             event.clientX - rect.left,
             event.clientY - rect.top
         );
         
-        // Default to adding a circle
+        
         this.addCircle(clickPos.x, clickPos.y);
     }
     
     update(timestamp: number): void {
         if (!this.running) return;
         
-        // Calculate delta time in seconds
+        
         const dt = (this.lastTimestamp) ? (timestamp - this.lastTimestamp) / 1000 : 1/60;
         this.lastTimestamp = timestamp;
         
-        // Clear canvas
+        
         this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
         
-        // Apply forces and update all objects
+        
         for (const obj of this.objects) {
-            // Apply gravity
+            
             obj.applyForce(this.gravity.multiply(obj.mass));
             
-            // Update physics
+            
             obj.update(dt);
             
-            // Check boundaries
+            
             this.checkBoundaries(obj);
             
-            // Draw object
+            
             obj.draw(this.ctx);
         }
         
-        // Check collisions between objects
+        
         this.checkCollisions();
         
-        // Schedule next frame
+        
         requestAnimationFrame(this.update.bind(this));
     }
     
     checkBoundaries(obj: PhysicsObject): void {
         if (obj instanceof Circle) {
-            // Bottom boundary
+            
             if (obj.position.y + obj.radius > this.canvas.height) {
                 obj.position.y = this.canvas.height - obj.radius;
                 obj.velocity.y = -obj.velocity.y * obj.elasticity;
                 
-                // Apply friction to x velocity when on the ground
+                
                 obj.velocity.x *= (1 - obj.friction);
             }
             
-            // Top boundary
+            
             if (obj.position.y - obj.radius < 0) {
                 obj.position.y = obj.radius;
                 obj.velocity.y = -obj.velocity.y * obj.elasticity;
             }
             
-            // Right boundary
+            
             if (obj.position.x + obj.radius > this.canvas.width) {
                 obj.position.x = this.canvas.width - obj.radius;
                 obj.velocity.x = -obj.velocity.x * obj.elasticity;
             }
             
-            // Left boundary
+            
             if (obj.position.x - obj.radius < 0) {
                 obj.position.x = obj.radius;
                 obj.velocity.x = -obj.velocity.x * obj.elasticity;
             }
         } else if (obj instanceof Box) {
-            // Simplified boundary check for boxes (doesn't account for rotation)
             
-            // Bottom boundary
+            
+            
             if (obj.position.y + obj.height/2 > this.canvas.height) {
                 obj.position.y = this.canvas.height - obj.height/2;
                 obj.velocity.y = -obj.velocity.y * obj.elasticity;
                 obj.velocity.x *= (1 - obj.friction);
-                obj.angularVelocity *= 0.8; // Reduce angular velocity
+                obj.angularVelocity *= 0.8; 
             }
             
-            // Top boundary
+            
             if (obj.position.y - obj.height/2 < 0) {
                 obj.position.y = obj.height/2;
                 obj.velocity.y = -obj.velocity.y * obj.elasticity;
             }
             
-            // Right boundary
+            
             if (obj.position.x + obj.width/2 > this.canvas.width) {
                 obj.position.x = this.canvas.width - obj.width/2;
                 obj.velocity.x = -obj.velocity.x * obj.elasticity;
             }
             
-            // Left boundary
+            
             if (obj.position.x - obj.width/2 < 0) {
                 obj.position.x = obj.width/2;
                 obj.velocity.x = -obj.velocity.x * obj.elasticity;
@@ -306,53 +304,53 @@ class PhysicsWorld {
     }
     
     checkCollisions(): void {
-        // Simple collision detection between objects
+        
         for (let i = 0; i < this.objects.length; i++) {
             for (let j = i + 1; j < this.objects.length; j++) {
                 const objA = this.objects[i];
                 const objB = this.objects[j];
                 
-                // Circle to circle collision
+                
                 if (objA instanceof Circle && objB instanceof Circle) {
                     this.handleCircleToCircleCollision(objA, objB);
                 }
-                // Other collision types would be implemented here
+                
             }
         }
     }
     
     handleCircleToCircleCollision(circleA: Circle, circleB: Circle): void {
-        // Calculate distance between circles
+        
         const distance = circleA.position.subtract(circleB.position).magnitude();
         const minDistance = circleA.radius + circleB.radius;
         
-        // Check if circles are colliding
+        
         if (distance < minDistance) {
-            // Calculate collision normal
+            
             const normal = circleA.position.subtract(circleB.position).normalize();
             
-            // Calculate relative velocity
+            
             const relativeVelocity = circleA.velocity.subtract(circleB.velocity);
             
-            // Calculate relative velocity along normal
+            
             const velocityAlongNormal = relativeVelocity.dot(normal);
             
-            // If objects are moving away from each other, skip
+            
             if (velocityAlongNormal > 0) return;
             
-            // Calculate elasticity
+            
             const e = Math.min(circleA.elasticity, circleB.elasticity);
             
-            // Calculate impulse scalar
+            
             let j = -(1 + e) * velocityAlongNormal;
             j /= 1/circleA.mass + 1/circleB.mass;
             
-            // Apply impulse
+            
             const impulse = normal.multiply(j);
             circleA.velocity = circleA.velocity.add(impulse.multiply(1/circleA.mass));
             circleB.velocity = circleB.velocity.subtract(impulse.multiply(1/circleB.mass));
             
-            // Move circles apart to avoid sticking
+            
             const correctionPercent = 0.8;
             const correction = normal.multiply((minDistance - distance) * correctionPercent);
             circleA.position = circleA.position.add(correction.multiply(1/circleA.mass / (1/circleA.mass + 1/circleB.mass)));
@@ -414,5 +412,5 @@ class PhysicsWorld {
     }
 }
 
-// Export the physics engine
+
 export { Vector2D, Circle, Box, PhysicsObject, PhysicsWorld };
