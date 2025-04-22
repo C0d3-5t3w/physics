@@ -1,0 +1,285 @@
+// Retro theme variables
+$primary-color: #ff6b6b;      // Retro pink/red
+$secondary-color: #4834d4;    // Retro purple
+$accent-color: #26de81;       // Retro green
+$bg-color: #000000;           // Black background
+$text-color: #f0f0f0;         // Light text
+$border-radius: 0px;          // Sharp corners for retro feel
+$shadow: 0 0 10px rgba(255, 107, 107, 0.7); // Neon glow shadow
+$grid-color: rgba(54, 54, 54, 0.8);
+$neon-glow: 0 0 5px #ff6b6b, 0 0 10px #ff6b6b, 0 0 15px #ff6b6b;
+
+// Import retro font
+@import url('https://fonts.googleapis.com/css2?family=VT323&family=Press+Start+2P&display=swap');
+
+// Reset and base styles
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: 'VT323', monospace;
+  background-color: $bg-color;
+  color: $text-color;
+  line-height: 1.6;
+  background-image: linear-gradient(rgba(40, 40, 40, 0.9) 1px, transparent 1px),
+                    linear-gradient(90deg, rgba(40, 40, 40, 0.9) 1px, transparent 1px);
+  background-size: 20px 20px;
+  background-position: center center;
+}
+
+.container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 20px;
+}
+
+// CRT effect
+.container::before {
+  content: "";
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%);
+  background-size: 100% 4px;
+  z-index: 2;
+  pointer-events: none;
+  opacity: 0.15;
+}
+
+// Header styles
+header {
+  text-align: center;
+  margin-bottom: 30px;
+  
+  h1 {
+    font-family: 'Press Start 2P', cursive;
+    color: $primary-color;
+    font-size: 2rem;
+    margin-bottom: 15px;
+    text-shadow: $neon-glow;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    padding: 10px 0;
+    border-bottom: 2px solid $primary-color;
+    border-top: 2px solid $primary-color;
+  }
+}
+
+// Simulation container
+.simulation-container {
+  background-color: rgba(20, 20, 20, 0.8);
+  border: 2px solid $primary-color;
+  box-shadow: $shadow;
+  margin-bottom: 30px;
+  overflow: hidden;
+  position: relative;
+  
+  &::after {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: repeating-linear-gradient(
+      0deg,
+      rgba(0, 0, 0, 0.1),
+      rgba(0, 0, 0, 0.1) 1px,
+      transparent 1px,
+      transparent 2px
+    );
+    pointer-events: none;
+    z-index: 1;
+  }
+  
+  #physics-canvas {
+    display: block;
+    width: 100%;
+    height: 500px;
+    background-color: #111;
+    background-image: 
+      linear-gradient($grid-color 1px, transparent 1px),
+      linear-gradient(90deg, $grid-color 1px, transparent 1px);
+    background-size: 20px 20px;
+    position: relative;
+    z-index: 0;
+  }
+}
+
+// Controls panel
+.controls-panel {
+  background-color: rgba(20, 20, 20, 0.8);
+  border: 2px solid $primary-color;
+  box-shadow: $shadow;
+  padding: 20px;
+  
+  h2 {
+    font-family: 'Press Start 2P', cursive;
+    color: $accent-color;
+    margin-bottom: 20px;
+    font-size: 1.2rem;
+    border-bottom: 2px solid $accent-color;
+    padding-bottom: 10px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+  }
+  
+  .control-group {
+    margin-bottom: 15px;
+    display: flex;
+    align-items: center;
+    
+    label {
+      width: 100px;
+      color: $primary-color;
+      font-weight: bold;
+      font-size: 1.2rem;
+      text-transform: uppercase;
+    }
+    
+    input[type="range"] {
+      flex-grow: 1;
+      margin: 0 10px;
+      height: 8px;
+      background-color: #333;
+      outline: none;
+      -webkit-appearance: none;
+      appearance: none;
+      
+      &::-webkit-slider-thumb {
+        -webkit-appearance: none;
+        appearance: none;
+        width: 18px;
+        height: 18px;
+        background: $accent-color;
+        cursor: pointer;
+        border: 2px solid #fff;
+        box-shadow: 0 0 5px $accent-color;
+      }
+      
+      &::-moz-range-thumb {
+        width: 18px;
+        height: 18px;
+        background: $accent-color;
+        cursor: pointer;
+        border: 2px solid #fff;
+        box-shadow: 0 0 5px $accent-color;
+      }
+    }
+    
+    span {
+      width: 40px;
+      text-align: right;
+      color: $accent-color;
+      font-weight: bold;
+      font-size: 1.2rem;
+      text-shadow: 0 0 2px $accent-color;
+    }
+  }
+  
+  .btn-group {
+    display: flex;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    margin-top: 25px;
+    
+    button {
+      background-color: #111;
+      color: $primary-color;
+      border: 2px solid $primary-color;
+      padding: 10px 15px;
+      cursor: pointer;
+      font-family: 'Press Start 2P', cursive;
+      font-size: 0.7rem;
+      text-transform: uppercase;
+      transition: all 0.2s;
+      margin: 5px;
+      flex: 1;
+      min-width: 120px;
+      position: relative;
+      overflow: hidden;
+      box-shadow: 0 0 5px rgba($primary-color, 0.5);
+      
+      &::after {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-image: linear-gradient(
+          rgba(255, 255, 255, 0.1) 0%,
+          rgba(255, 255, 255, 0) 40%
+        );
+        z-index: -1;
+      }
+      
+      &:hover {
+        color: #fff;
+        background-color: $primary-color;
+        box-shadow: 0 0 10px $primary-color;
+      }
+      
+      &#reset {
+        color: $accent-color;
+        border-color: $accent-color;
+        box-shadow: 0 0 5px rgba($accent-color, 0.5);
+        
+        &:hover {
+          background-color: $accent-color;
+          color: #fff;
+          box-shadow: 0 0 10px $accent-color;
+        }
+      }
+      
+      &#pause {
+        color: $secondary-color;
+        border-color: $secondary-color;
+        box-shadow: 0 0 5px rgba($secondary-color, 0.5);
+        
+        &:hover {
+          background-color: $secondary-color;
+          color: #fff;
+          box-shadow: 0 0 10px $secondary-color;
+        }
+      }
+    }
+  }
+}
+
+// Responsive styles
+@media (max-width: 768px) {
+  header h1 {
+    font-size: 1.5rem;
+  }
+  
+  .control-group {
+    flex-direction: column;
+    align-items: flex-start;
+    
+    label {
+      margin-bottom: 5px;
+    }
+    
+    input[type="range"] {
+      width: 100%;
+      margin: 10px 0;
+    }
+    
+    span {
+      align-self: flex-end;
+    }
+  }
+  
+  .btn-group {
+    button {
+      width: calc(50% - 10px);
+      font-size: 0.6rem;
+    }
+  }
+}
