@@ -1,8 +1,8 @@
-name: Build and Deploy
+name: Deploy static content to Pages
 
 on:
   push:
-    branches: [ main, master ]
+    branches: ["main"]
   workflow_dispatch:
 
 permissions:
@@ -12,15 +12,23 @@ permissions:
 
 concurrency:
   group: "pages"
-  cancel-in-progress: false
+  cancel-in-progress: true
 
 jobs:
-  build:
+  deploy:
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
       
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.2'
+          
       - name: Setup Node.js
         uses: actions/setup-node@v3
         with:
@@ -29,37 +37,129 @@ jobs:
       - name: Install dependencies
         run: |
           npm init -y
-          npm install --save-dev typescript sass
+          npm install -g sass
+          npm install --save-dev terser eslint typescript
           
+      - name: Create eslint config
+        run: |
+          echo '{
+            "env": {
+              "browser": true,
+              "es2021": true
+            },
+            "extends": "eslint:recommended",
+            "parserOptions": {
+              "ecmaVersion": 2021,
+              "sourceType": "module"
+            }
+          }' > .eslintrc.json
+          
+      - name: Create tsconfig.json
+        run: |
+          echo '{
+            "compilerOptions": {
+              "target": "es2016",
+              "module": "None",
+              "outDir": "./assets/js",
+              "rootDir": "./assets/ts",
+              "strict": true,
+              "esModuleInterop": true,
+              "skipLibCheck": true,
+              "forceConsistentCasingInFileNames": true
+            },
+            "include": ["./assets/ts/**/*"]
+          }' > tsconfig.json
+      
+      - name: List TypeScript files
+        run: |
+          echo "Found TypeScript files:"
+          find ./assets/ts -name "*.ts" | sort
+      
       - name: Compile TypeScript
         run: |
-          mkdir -p dist/js
-          npx tsc assets/ts/*.ts --outDir dist/js
-
-      - name: Compile SCSS
+          mkdir -p assets/js
+          echo "Compiling TypeScript files..."
+          # Explicitly list important TypeScript files for visibility
+          echo "Important files to compile: physicsEng.ts"
+          npx tsc --listFiles
+          if [ $? -ne 0 ]; then
+            echo "TypeScript compilation failed."
+            exit 1
+          else
+            echo "TypeScript compilation successful."
+          fi
+          
+      - name: Verify JavaScript output
         run: |
-          mkdir -p dist/css
-          npx sass assets/sass:dist/css
+          echo "Generated JavaScript files:"
+          find ./assets/js -name "*.js" | sort
+          # Check specifically for physicsEng.js
+          if [ -f "./assets/js/physicsEng.js" ]; then
+            echo "✅ physicsEng.js successfully generated"
+          else
+            echo "❌ physicsEng.js missing"
+            exit 1
+          fi
+          # Check specifically for phyControls.js
+          if [ -f "./assets/js/phyControls.js" ]; then
+            echo "✅ phyControls.js successfully generated"
+          else
+            echo "❌ phyControls.js missing"
+            exit 1
+          fi 
+      - name: Lint JavaScript
+        run: |
+          npx eslint assets/js/*.js --fix || true
+          
+      - name: Minify JavaScript
+        run: |
+          for file in assets/js/*.js; do
+            if [ -f "$file" ]; then
+              echo "Minifying $file"
+              npx terser "$file" \
+                --compress \
+                --mangle \
+                --source-map "base='assets/js',root='assets/js',url='$(basename "$file").map'" \
+                --output "${file%.js}.min.js"
+              if [ -f "${file%.js}.min.js" ]; then
+                mv "${file%.js}.min.js" "$file"
+                echo "✅ Successfully minified $file"
+              else
+                echo "⚠️ Warning: Minification of $file may have failed, keeping original"
+              fi
+            fi
+          done
+          
+      - name: Process PHP files
+        run: |
+          echo "Listing all PHP files found in repository:"
+          find . -type f -name "*.php" | sort
+          
+          echo "\nProcessing PHP files..."
+          find . -type f -name "*.php" -exec sh -c '
+            echo "Converting $1 to ${1%.php}.html"
+            php "$1" > "${1%.php}.html"
+            rm "$1"
+          ' sh {} \;
+          
+          echo "\nVerifying conversion - HTML files created:"
+          find . -type f -name "*.html" | grep -v "node_modules" | sort
+          
+      - name: Compile Sass
+        run: |
+          mkdir -p assets/css
+          if [ -f "assets/sass/global.scss" ]; then
+            sass assets/sass/global.scss:assets/css/global.css
+          fi
           
       - name: Setup Pages
-        uses: actions/configure-pages@v3
+        uses: actions/configure-pages@v5
         
-      - name: Build with Jekyll
-        uses: actions/jekyll-build-pages@v1
-        with:
-          source: ./
-          destination: ./_site
-          
       - name: Upload artifact
-        uses: actions/upload-pages-artifact@v1
-
-  deploy:
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
-    runs-on: ubuntu-latest
-    needs: build
-    steps:
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: '.'
+          
       - name: Deploy to GitHub Pages
         id: deployment
-        uses: actions/deploy-pages@v2
+        uses: actions/deploy-pages@v4
