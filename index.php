@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Physics</title>
-    <link rel="stylesheet" href="dist/css/global.css">
+    <link rel="stylesheet" href="assets/css/global.css">
 </head>
 <body>
     <div class="container">
@@ -46,7 +46,7 @@
         </div>
     </div>
     
-    <script type="module" src="dist/js/physicsEng.js"></script>
-    <script type="module" src="dist/js/phyControls.js"></script>
+    <script type="module" src="assets/js/physicsEng.js"></script>
+    <script type="module" src="assets/js/phyControls.js"></script>
 </body>
 </html>
