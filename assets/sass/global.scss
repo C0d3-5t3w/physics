@@ -1,18 +1,15 @@
-// Retro theme variables
-$primary-color: #ff6b6b;      // Retro pink/red
-$secondary-color: #4834d4;    // Retro purple
-$accent-color: #26de81;       // Retro green
-$bg-color: #000000;           // Black background
-$text-color: #f0f0f0;         // Light text
-$border-radius: 0px;          // Sharp corners for retro feel
-$shadow: 0 0 10px rgba(255, 107, 107, 0.7); // Neon glow shadow
+$primary-color: #ff6b6b;      
+$secondary-color: #4834d4;    
+$accent-color: #26de81;       
+$bg-color: #000000;           
+$text-color: #f0f0f0;         
+$border-radius: 0px;          
+$shadow: 0 0 10px rgba(255, 107, 107, 0.7); 
 $grid-color: rgba(54, 54, 54, 0.8);
 $neon-glow: 0 0 5px #ff6b6b, 0 0 10px #ff6b6b, 0 0 15px #ff6b6b;
 
-// Import retro font
 @import url('https://fonts.googleapis.com/css2?family=VT323&family=Press+Start+2P&display=swap');
 
-// Reset and base styles
 * {
   margin: 0;
   padding: 0;
@@ -36,7 +33,7 @@ body {
   padding: 20px;
 }
 
-// CRT effect
+
 .container::before {
   content: "";
   position: fixed;
@@ -51,7 +48,7 @@ body {
   opacity: 0.15;
 }
 
-// Header styles
+
 header {
   text-align: center;
   margin-bottom: 30px;
@@ -70,7 +67,7 @@ header {
   }
 }
 
-// Simulation container
+
 .simulation-container {
   background-color: rgba(20, 20, 20, 0.8);
   border: 2px solid $primary-color;
@@ -111,7 +108,7 @@ header {
   }
 }
 
-// Controls panel
+
 .controls-panel {
   background-color: rgba(20, 20, 20, 0.8);
   border: 2px solid $primary-color;
@@ -252,7 +249,7 @@ header {
   }
 }
 
-// Responsive styles
+
 @media (max-width: 768px) {
   header h1 {
     font-size: 1.5rem;
