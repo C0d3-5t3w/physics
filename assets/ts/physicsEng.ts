@@ -1,5 +1,5 @@
-class Vector2D {
-    constructor(public x: number = 0, public y: number = 0) {}
+export class Vector2D {
+    constructor(public readonly x: number = 0, public readonly y: number = 0) {}
 
     add(v: Vector2D): Vector2D {
         return new Vector2D(this.x + v.x, this.y + v.y);
@@ -28,8 +28,7 @@ class Vector2D {
     }
 }
 
-
-interface PhysicsObject {
+export interface PhysicsObject {
     position: Vector2D;
     velocity: Vector2D;
     acceleration: Vector2D;
@@ -42,25 +41,50 @@ interface PhysicsObject {
     contains(point: Vector2D): boolean;
 }
 
+export interface CircleParams {
+    position: Vector2D;
+    radius: number;
+    mass?: number;
+    velocity?: Vector2D;
+    acceleration?: Vector2D;
+    elasticity?: number;
+    friction?: number;
+    color?: string;
+}
 
-class Circle implements PhysicsObject {
-    constructor(
-        public position: Vector2D,
-        public radius: number,
-        public mass: number = 1,
-        public velocity: Vector2D = new Vector2D(),
-        public acceleration: Vector2D = new Vector2D(),
-        public elasticity: number = 0.7,
-        public friction: number = 0.1,
-        public color: string = `rgb(${Math.floor(Math.random() * 255)}, ${Math.floor(Math.random() * 255)}, ${Math.floor(Math.random() * 255)})`
-    ) {}
+export class Circle implements PhysicsObject {
+    public position: Vector2D;
+    public velocity: Vector2D;
+    public acceleration: Vector2D;
+    public readonly radius: number;
+    public readonly mass: number;
+    public elasticity: number;
+    public friction: number;
+    public readonly color: string;
+
+    constructor({
+        position,
+        radius,
+        mass = 1,
+        velocity = new Vector2D(),
+        acceleration = new Vector2D(),
+        elasticity = 0.7,
+        friction = 0.1,
+        color = `rgb(${Math.floor(Math.random() * 255)}, ${Math.floor(Math.random() * 255)}, ${Math.floor(Math.random() * 255)})`
+    }: CircleParams) {
+        this.position = position;
+        this.radius = radius;
+        this.mass = mass;
+        this.velocity = velocity;
+        this.acceleration = acceleration;
+        this.elasticity = elasticity;
+        this.friction = friction;
+        this.color = color;
+    }
 
     update(dt: number): void {
-        
         this.velocity = this.velocity.add(this.acceleration.multiply(dt));
         this.position = this.position.add(this.velocity.multiply(dt));
-        
-        
         this.acceleration = new Vector2D();
     }
 
@@ -76,7 +100,6 @@ class Circle implements PhysicsObject {
     }
 
     applyForce(force: Vector2D): void {
-        
         const acceleration = force.multiply(1 / this.mass);
         this.acceleration = this.acceleration.add(acceleration);
     }
@@ -87,37 +110,57 @@ class Circle implements PhysicsObject {
     }
 }
 
+export interface BoxParams {
+    position: Vector2D;
+    width: number;
+    height: number;
+    mass?: number;
+    velocity?: Vector2D;
+    acceleration?: Vector2D;
+    elasticity?: number;
+    friction?: number;
+    color?: string;
+}
 
-class Box implements PhysicsObject {
-    public width: number;
-    public height: number;
+export class Box implements PhysicsObject {
+    public position: Vector2D;
+    public velocity: Vector2D;
+    public acceleration: Vector2D;
+    public readonly width: number;
+    public readonly height: number;
+    public readonly mass: number;
+    public elasticity: number;
+    public friction: number;
+    public readonly color: string;
     public rotation: number = 0;
     public angularVelocity: number = 0;
 
-    constructor(
-        public position: Vector2D,
-        width: number,
-        height: number,
-        public mass: number = 1,
-        public velocity: Vector2D = new Vector2D(),
-        public acceleration: Vector2D = new Vector2D(),
-        public elasticity: number = 0.7,
-        public friction: number = 0.1,
-        public color: string = `rgb(${Math.floor(Math.random() * 255)}, ${Math.floor(Math.random() * 255)}, ${Math.floor(Math.random() * 255)})`
-    ) {
+    constructor({
+        position,
+        width,
+        height,
+        mass = 1,
+        velocity = new Vector2D(),
+        acceleration = new Vector2D(),
+        elasticity = 0.7,
+        friction = 0.1,
+        color = `rgb(${Math.floor(Math.random() * 255)}, ${Math.floor(Math.random() * 255)}, ${Math.floor(Math.random() * 255)})`
+    }: BoxParams) {
+        this.position = position;
         this.width = width;
         this.height = height;
+        this.mass = mass;
+        this.velocity = velocity;
+        this.acceleration = acceleration;
+        this.elasticity = elasticity;
+        this.friction = friction;
+        this.color = color;
     }
 
     update(dt: number): void {
-        
         this.velocity = this.velocity.add(this.acceleration.multiply(dt));
         this.position = this.position.add(this.velocity.multiply(dt));
-        
-        
         this.rotation += this.angularVelocity * dt;
-        
-        
         this.acceleration = new Vector2D();
     }
 
@@ -139,14 +182,11 @@ class Box implements PhysicsObject {
     }
 
     applyForce(force: Vector2D): void {
-        
         const acceleration = force.multiply(1 / this.mass);
         this.acceleration = this.acceleration.add(acceleration);
     }
 
-    
     contains(point: Vector2D): boolean {
-        
         const localPoint = new Vector2D(
             (point.x - this.position.x) * Math.cos(-this.rotation) - (point.y - this.position.y) * Math.sin(-this.rotation),
             (point.x - this.position.x) * Math.sin(-this.rotation) + (point.y - this.position.y) * Math.cos(-this.rotation)
@@ -161,38 +201,79 @@ class Box implements PhysicsObject {
     }
 }
 
-
-class PhysicsWorld {
-    private objects: PhysicsObject[] = [];
+export class PhysicsWorld {
+    private readonly objects: PhysicsObject[] = [];
     private canvas: HTMLCanvasElement;
     private ctx: CanvasRenderingContext2D;
     private running: boolean = true;
     private lastTimestamp: number = 0;
     private gravity: Vector2D = new Vector2D(0, 9.8);
+    private initialized: boolean = false;
     
     constructor(canvasId: string) {
-        this.canvas = document.getElementById(canvasId) as HTMLCanvasElement;
-        if (!this.canvas) throw new Error(`Canvas with id ${canvasId} not found`);
+        // Wait for DOM to be fully loaded
+        if (document.readyState === 'loading') {
+            throw new Error('PhysicsWorld should be initialized after DOM is fully loaded');
+        }
         
-        const ctx = this.canvas.getContext('2d');
-        if (!ctx) throw new Error('Could not get canvas context');
-        this.ctx = ctx;
-        
-        
-        this.resetCanvasSize();
-        
-        
-        requestAnimationFrame(this.update.bind(this));
-        
-        
-        window.addEventListener('resize', this.resetCanvasSize.bind(this));
-        
-        
-        this.canvas.addEventListener('click', this.handleCanvasClick.bind(this));
+        const canvas = document.getElementById(canvasId) as HTMLCanvasElement;
+        if (!canvas) {
+            console.error(`Canvas with id ${canvasId} not found. Will retry when DOM is loaded.`);
+            // Create a placeholder canvas until the real one is available
+            this.canvas = document.createElement('canvas');
+            this.ctx = this.canvas.getContext('2d') as CanvasRenderingContext2D;
+            
+            // Try to find the canvas once DOM is fully loaded
+            if (document.readyState !== 'complete') {
+                window.addEventListener('DOMContentLoaded', () => this.initializeCanvas(canvasId));
+            } else {
+                // If DOM is already complete but canvas wasn't found, something else is wrong
+                console.error('DOM is loaded but canvas was not found. Check your HTML structure.');
+            }
+        } else {
+            this.canvas = canvas;
+            const ctx = this.canvas.getContext('2d');
+            if (!ctx) {
+                throw new Error('Could not get canvas context');
+            }
+            this.ctx = ctx;
+            this.initialize();
+        }
     }
     
-    resetCanvasSize(): void {
+    private initializeCanvas(canvasId: string): void {
+        const canvas = document.getElementById(canvasId) as HTMLCanvasElement;
+        if (!canvas) {
+            console.error(`Canvas with id ${canvasId} still not found after DOM loaded`);
+            return;
+        }
         
+        this.canvas = canvas;
+        const ctx = this.canvas.getContext('2d');
+        if (!ctx) {
+            console.error('Could not get canvas context');
+            return;
+        }
+        this.ctx = ctx;
+        this.initialize();
+    }
+    
+    private initialize(): void {
+        if (this.initialized) return;
+        
+        this.resetCanvasSize();
+        window.addEventListener('resize', this.resetCanvasSize.bind(this));
+        this.canvas.addEventListener('click', this.handleCanvasClick.bind(this));
+        
+        this.update = this.update.bind(this);
+        this.initialized = true;
+        
+        // Start animation loop
+        requestAnimationFrame(this.update);
+        console.log('PhysicsWorld initialized successfully');
+    }
+    
+    private resetCanvasSize(): void {
         const container = this.canvas.parentElement;
         if (container) {
             this.canvas.width = container.clientWidth;
@@ -200,217 +281,209 @@ class PhysicsWorld {
         }
     }
     
-    handleCanvasClick(event: MouseEvent): void {
-        
+    private handleCanvasClick(event: MouseEvent): void {
         const rect = this.canvas.getBoundingClientRect();
         const clickPos = new Vector2D(
             event.clientX - rect.left,
             event.clientY - rect.top
         );
         
-        
         this.addCircle(clickPos.x, clickPos.y);
     }
     
-    update(timestamp: number): void {
-        if (!this.running) return;
+    private update(timestamp: number): void {
+        if (!this.initialized) {
+            requestAnimationFrame(this.update);
+            return;
+        }
         
+        if (!this.running) {
+            requestAnimationFrame(this.update);
+            return;
+        }
         
         const dt = (this.lastTimestamp) ? (timestamp - this.lastTimestamp) / 1000 : 1/60;
         this.lastTimestamp = timestamp;
         
-        
         this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
         
-        
         for (const obj of this.objects) {
-            
             obj.applyForce(this.gravity.multiply(obj.mass));
-            
-            
             obj.update(dt);
-            
-            
             this.checkBoundaries(obj);
-            
-            
             obj.draw(this.ctx);
         }
         
-        
         this.checkCollisions();
         
-        
-        requestAnimationFrame(this.update.bind(this));
+        requestAnimationFrame(this.update);
     }
     
-    checkBoundaries(obj: PhysicsObject): void {
+    private checkBoundaries(obj: PhysicsObject): void {
         if (obj instanceof Circle) {
-            
             if (obj.position.y + obj.radius > this.canvas.height) {
-                obj.position.y = this.canvas.height - obj.radius;
-                obj.velocity.y = -obj.velocity.y * obj.elasticity;
-                
-                
-                obj.velocity.x *= (1 - obj.friction);
+                obj.position = new Vector2D(obj.position.x, this.canvas.height - obj.radius);
+                obj.velocity = new Vector2D(
+                    obj.velocity.x * (1 - obj.friction), 
+                    -obj.velocity.y * obj.elasticity
+                );
             }
-            
             
             if (obj.position.y - obj.radius < 0) {
-                obj.position.y = obj.radius;
-                obj.velocity.y = -obj.velocity.y * obj.elasticity;
+                obj.position = new Vector2D(obj.position.x, obj.radius);
+                obj.velocity = new Vector2D(
+                    obj.velocity.x, 
+                    -obj.velocity.y * obj.elasticity
+                );
             }
-            
             
             if (obj.position.x + obj.radius > this.canvas.width) {
-                obj.position.x = this.canvas.width - obj.radius;
-                obj.velocity.x = -obj.velocity.x * obj.elasticity;
+                obj.position = new Vector2D(this.canvas.width - obj.radius, obj.position.y);
+                obj.velocity = new Vector2D(
+                    -obj.velocity.x * obj.elasticity, 
+                    obj.velocity.y
+                );
             }
-            
             
             if (obj.position.x - obj.radius < 0) {
-                obj.position.x = obj.radius;
-                obj.velocity.x = -obj.velocity.x * obj.elasticity;
+                obj.position = new Vector2D(obj.radius, obj.position.y);
+                obj.velocity = new Vector2D(
+                    -obj.velocity.x * obj.elasticity, 
+                    obj.velocity.y
+                );
             }
         } else if (obj instanceof Box) {
-            
-            
-            
             if (obj.position.y + obj.height/2 > this.canvas.height) {
-                obj.position.y = this.canvas.height - obj.height/2;
-                obj.velocity.y = -obj.velocity.y * obj.elasticity;
-                obj.velocity.x *= (1 - obj.friction);
-                obj.angularVelocity *= 0.8; 
+                obj.position = new Vector2D(obj.position.x, this.canvas.height - obj.height/2);
+                obj.velocity = new Vector2D(
+                    obj.velocity.x * (1 - obj.friction), 
+                    -obj.velocity.y * obj.elasticity
+                );
+                obj.angularVelocity *= 0.8;
             }
-            
             
             if (obj.position.y - obj.height/2 < 0) {
-                obj.position.y = obj.height/2;
-                obj.velocity.y = -obj.velocity.y * obj.elasticity;
+                obj.position = new Vector2D(obj.position.x, obj.height/2);
+                obj.velocity = new Vector2D(
+                    obj.velocity.x, 
+                    -obj.velocity.y * obj.elasticity
+                );
             }
-            
             
             if (obj.position.x + obj.width/2 > this.canvas.width) {
-                obj.position.x = this.canvas.width - obj.width/2;
-                obj.velocity.x = -obj.velocity.x * obj.elasticity;
+                obj.position = new Vector2D(this.canvas.width - obj.width/2, obj.position.y);
+                obj.velocity = new Vector2D(
+                    -obj.velocity.x * obj.elasticity, 
+                    obj.velocity.y
+                );
             }
             
-            
             if (obj.position.x - obj.width/2 < 0) {
-                obj.position.x = obj.width/2;
-                obj.velocity.x = -obj.velocity.x * obj.elasticity;
+                obj.position = new Vector2D(obj.width/2, obj.position.y);
+                obj.velocity = new Vector2D(
+                    -obj.velocity.x * obj.elasticity, 
+                    obj.velocity.y
+                );
             }
         }
     }
     
-    checkCollisions(): void {
-        
+    private checkCollisions(): void {
         for (let i = 0; i < this.objects.length; i++) {
             for (let j = i + 1; j < this.objects.length; j++) {
                 const objA = this.objects[i];
                 const objB = this.objects[j];
                 
-                
                 if (objA instanceof Circle && objB instanceof Circle) {
                     this.handleCircleToCircleCollision(objA, objB);
                 }
-                
             }
         }
     }
     
-    handleCircleToCircleCollision(circleA: Circle, circleB: Circle): void {
-        
+    private handleCircleToCircleCollision(circleA: Circle, circleB: Circle): void {
         const distance = circleA.position.subtract(circleB.position).magnitude();
         const minDistance = circleA.radius + circleB.radius;
         
-        
         if (distance < minDistance) {
-            
             const normal = circleA.position.subtract(circleB.position).normalize();
-            
-            
             const relativeVelocity = circleA.velocity.subtract(circleB.velocity);
-            
-            
             const velocityAlongNormal = relativeVelocity.dot(normal);
-            
             
             if (velocityAlongNormal > 0) return;
             
-            
             const e = Math.min(circleA.elasticity, circleB.elasticity);
-            
             
             let j = -(1 + e) * velocityAlongNormal;
             j /= 1/circleA.mass + 1/circleB.mass;
             
-            
             const impulse = normal.multiply(j);
+            
             circleA.velocity = circleA.velocity.add(impulse.multiply(1/circleA.mass));
             circleB.velocity = circleB.velocity.subtract(impulse.multiply(1/circleB.mass));
             
-            
             const correctionPercent = 0.8;
             const correction = normal.multiply((minDistance - distance) * correctionPercent);
-            circleA.position = circleA.position.add(correction.multiply(1/circleA.mass / (1/circleA.mass + 1/circleB.mass)));
-            circleB.position = circleB.position.subtract(correction.multiply(1/circleB.mass / (1/circleA.mass + 1/circleB.mass)));
+            
+            const totalInverseMass = 1/circleA.mass + 1/circleB.mass;
+            const ratioA = 1/circleA.mass / totalInverseMass;
+            const ratioB = 1/circleB.mass / totalInverseMass;
+            
+            circleA.position = circleA.position.add(correction.multiply(ratioA));
+            circleB.position = circleB.position.subtract(correction.multiply(ratioB));
         }
     }
     
-    addCircle(x: number, y: number, radius?: number, mass?: number): Circle {
-        const circle = new Circle(
-            new Vector2D(x, y),
-            radius || 20 + Math.random() * 20,
-            mass || 1 + Math.random() * 5
-        );
+    public addCircle(x: number, y: number, radius?: number, mass?: number): Circle {
+        const circle = new Circle({
+            position: new Vector2D(x, y),
+            radius: radius ?? (20 + Math.random() * 20),
+            mass: mass ?? (1 + Math.random() * 5)
+        });
         this.objects.push(circle);
         return circle;
     }
     
-    addBox(x: number, y: number, width?: number, height?: number, mass?: number): Box {
-        const box = new Box(
-            new Vector2D(x, y),
-            width || 30 + Math.random() * 40,
-            height || 30 + Math.random() * 40,
-            mass || 1 + Math.random() * 5
-        );
+    public addBox(x: number, y: number, width?: number, height?: number, mass?: number): Box {
+        const box = new Box({
+            position: new Vector2D(x, y),
+            width: width ?? (30 + Math.random() * 40),
+            height: height ?? (30 + Math.random() * 40),
+            mass: mass ?? (1 + Math.random() * 5)
+        });
         this.objects.push(box);
         return box;
     }
     
-    setGravity(x: number, y: number): void {
+    public setGravity(x: number, y: number): void {
         this.gravity = new Vector2D(x, y);
     }
     
-    setGlobalElasticity(elasticity: number): void {
+    public setGlobalElasticity(elasticity: number): void {
         for (const obj of this.objects) {
             obj.elasticity = elasticity;
         }
     }
     
-    setGlobalFriction(friction: number): void {
+    public setGlobalFriction(friction: number): void {
         for (const obj of this.objects) {
             obj.friction = friction;
         }
     }
     
-    clearObjects(): void {
-        this.objects = [];
+    public clearObjects(): void {
+        this.objects.length = 0;
     }
     
-    pauseSimulation(): void {
+    public pauseSimulation(): void {
         this.running = !this.running;
-        if (this.running) {
-            this.lastTimestamp = 0;
-            requestAnimationFrame(this.update.bind(this));
+        if (this.running && this.lastTimestamp === 0) {
+            this.lastTimestamp = performance.now();
+            requestAnimationFrame(this.update);
         }
     }
-
-    getRunningState(): boolean {
+    
+    public getRunningState(): boolean {
         return this.running;
     }
 }
-
-
-export { Vector2D, Circle, Box, PhysicsObject, PhysicsWorld };

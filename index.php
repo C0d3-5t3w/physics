@@ -46,7 +46,19 @@
         </div>
     </div>
     
+    <!-- Add error handling for script loading -->
+    <script>
+        // Monitor script loading errors
+        window.addEventListener('error', function(e) {
+            if (e.target && e.target.tagName === 'SCRIPT') {
+                console.error('Error loading script:', e.target.src);
+            }
+        }, true);
+    </script>
+    
+    <!-- Make sure scripts are loaded with defer to ensure DOM is ready -->
     <script type="module" src="assets/js/physicsEng.js"></script>
     <script type="module" src="assets/js/phyControls.js"></script>
+
 </body>
 </html>
