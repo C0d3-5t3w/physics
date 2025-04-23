@@ -487,3 +487,63 @@ export class PhysicsWorld {
         return this.running;
     }
 }
+
+// Example integration in your TypeScript code
+class EnhancedPhysicsWorld extends PhysicsWorld {
+    
+    calculateGravitationalAttraction(objA: PhysicsObject, objB: PhysicsObject): Vector2D {
+        if (typeof goCalculateGravitationalForce !== 'function') {
+            console.error('WASM functions not available');
+            return new Vector2D(0, 0);
+        }
+        
+        const distance = objA.position.subtract(objB.position).magnitude();
+        const direction = objB.position.subtract(objA.position).normalize();
+        const G = 6.67430e-11 * 1e10; // Scaled for simulation
+        
+        // Use Go WASM function to calculate force magnitude
+        const forceMagnitude = goCalculateGravitationalForce(
+            objA.mass,
+            objB.mass,
+            distance,
+            G
+        );
+        
+        return new Vector2D(
+            direction.x * forceMagnitude,
+            direction.y * forceMagnitude
+        );
+    }
+    
+    addPlanetarySystem(centralX: number, centralY: number): void {
+        if (typeof goCalculateOrbit !== 'function') {
+            console.error('WASM functions not available');
+            return;
+        }
+        
+        // Add a central "sun"
+        const sun = this.addCircle(centralX, centralY, 40, 1000);
+        sun.velocity = new Vector2D(0, 0);
+        
+        // Add planets in orbit
+        const G = 6.67430e-11 * 1e10; // Scaled for simulation
+        for (let i = 0; i < 5; i++) {
+            const distance = 100 + i * 50;
+            const mass = 10 + Math.random() * 20;
+            
+            // Use Go WASM to calculate orbit parameters
+            const orbitParams = goCalculateOrbit(sun.mass, distance, G);
+            
+            // Create planet
+            const planet = this.addCircle(
+                centralX + distance,
+                centralY,
+                10 + i * 3,
+                mass
+            );
+            
+            // Set velocity for circular orbit
+            planet.velocity = new Vector2D(0, -orbitParams.velocity * 0.2);
+        }
+    }
+}
