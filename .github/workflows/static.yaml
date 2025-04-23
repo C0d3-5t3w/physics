@@ -143,22 +143,55 @@ jobs:
       - name: Compile Go code
         run: |
           echo "Compiling Go code..."
+          # Create necessary directories
+          mkdir -p ./assets/wasm
+          mkdir -p ./assets/js
+          
+          # For WebAssembly (if you want to use Go in the browser)
+          if [ -d "./wasm" ]; then
+            echo "Building WebAssembly files..."
+            GOOS=js GOARCH=wasm go build -o ./assets/wasm/main.wasm ./wasm/
+            
+            # Find wasm_exec.js using different approaches
+            WASM_EXEC_PATH="$(go env GOROOT)/misc/wasm/wasm_exec.js"
+            
+            if [ ! -f "$WASM_EXEC_PATH" ]; then
+              echo "Looking for wasm_exec.js in alternative locations..."
+              # Try common alternative locations
+              WASM_EXEC_PATH="$(go env GOROOT)/share/go/misc/wasm/wasm_exec.js"
+            fi
+            
+            if [ ! -f "$WASM_EXEC_PATH" ]; then
+              # If still not found, search for it
+              echo "Searching for wasm_exec.js..."
+              WASM_EXEC_PATH=$(find $(go env GOROOT) -name "wasm_exec.js" | head -n 1)
+            fi
+            
+            if [ -f "$WASM_EXEC_PATH" ]; then
+              echo "Found wasm_exec.js at $WASM_EXEC_PATH"
+              cp "$WASM_EXEC_PATH" ./assets/js/
+              echo "✅ Copied wasm_exec.js to ./assets/js/"
+            else
+              echo "⚠️ Could not find wasm_exec.js - downloading from GitHub..."
+              curl -o ./assets/js/wasm_exec.js https://raw.githubusercontent.com/golang/go/master/misc/wasm/wasm_exec.js
+              
+              if [ $? -eq 0 ]; then
+                echo "✅ Downloaded wasm_exec.js from GitHub"
+              else
+                echo "❌ Failed to download wasm_exec.js"
+                exit 1
+              fi
+            fi
+            
+            echo "✅ Go WebAssembly compiled to ./assets/wasm/"
+          fi
+          
           # Standard Go binary compilation
           if [ -d "./cmd" ]; then
             go build -o ./bin/ ./cmd/...
             echo "✅ Go binaries compiled to ./bin/"
           fi
           
-          # For WebAssembly (if you want to use Go in the browser)
-          if [ -d "./wasm" ]; then
-            echo "Building WebAssembly files..."
-            GOOS=js GOARCH=wasm go build -o ./assets/wasm/main.wasm ./wasm/
-            # Copy the WebAssembly JavaScript support file
-            cp "$(go env GOROOT)/misc/wasm/wasm_exec.js" ./assets/js/
-            echo "✅ Go WebAssembly compiled to ./assets/wasm/"
-          fi
-          
-
       - name: Process PHP files
         run: |
           echo "Listing all PHP files found in repository:"
