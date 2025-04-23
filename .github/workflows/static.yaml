@@ -24,32 +24,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
       
-      - name: Setup Go
-        uses: actions/setup-go@v4
-        with:
-          go-version: '1.21'
-          
-      - name: Verify Go installation
-        run: go version
-        
-      - name: Compile Go code
-        run: |
-          echo "Compiling Go code..."
-          # Standard Go binary compilation
-          if [ -d "./cmd" ]; then
-            go build -o ./bin/ ./cmd/...
-            echo "✅ Go binaries compiled to ./bin/"
-          fi
-          
-          # For WebAssembly (if you want to use Go in the browser)
-          if [ -d "./wasm" ]; then
-            echo "Building WebAssembly files..."
-            GOOS=js GOARCH=wasm go build -o ./assets/wasm/main.wasm ./wasm/
-            # Copy the WebAssembly JavaScript support file
-            cp "$(go env GOROOT)/misc/wasm/wasm_exec.js" ./assets/js/
-            echo "✅ Go WebAssembly compiled to ./assets/wasm/"
-          fi
-          
+
       - name: Setup PHP
         uses: shivammathur/setup-php@v2
         with:
@@ -156,7 +131,34 @@ jobs:
               fi
             fi
           done
+         
+      - name: Setup Go
+        uses: actions/setup-go@v4
+        with:
+          go-version: '1.21'
           
+      - name: Verify Go installation
+        run: go version
+        
+      - name: Compile Go code
+        run: |
+          echo "Compiling Go code..."
+          # Standard Go binary compilation
+          if [ -d "./cmd" ]; then
+            go build -o ./bin/ ./cmd/...
+            echo "✅ Go binaries compiled to ./bin/"
+          fi
+          
+          # For WebAssembly (if you want to use Go in the browser)
+          if [ -d "./wasm" ]; then
+            echo "Building WebAssembly files..."
+            GOOS=js GOARCH=wasm go build -o ./assets/wasm/main.wasm ./wasm/
+            # Copy the WebAssembly JavaScript support file
+            cp "$(go env GOROOT)/misc/wasm/wasm_exec.js" ./assets/js/
+            echo "✅ Go WebAssembly compiled to ./assets/wasm/"
+          fi
+          
+
       - name: Process PHP files
         run: |
           echo "Listing all PHP files found in repository:"
