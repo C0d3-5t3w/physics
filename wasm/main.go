@@ -310,7 +310,10 @@ func updateDOMElement(this js.Value, args []js.Value) interface{} {
 			for i := 0; i < length; i++ {
 				point := waveData.Index(i)
 				x := point.Get("x").Float() / (2 * math.Pi) * float64(width)
-				y := height/2 - point.Get("y").Float()*float64(height/4)
+
+				// Fix: Convert height to float64 before arithmetic operations
+				heightFloat := float64(height)
+				y := heightFloat/2 - point.Get("y").Float()*(heightFloat/4)
 
 				if i == 0 {
 					ctx.Call("moveTo", x, y)
